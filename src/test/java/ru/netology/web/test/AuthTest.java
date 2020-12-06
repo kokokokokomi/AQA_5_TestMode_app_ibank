@@ -1,70 +1,63 @@
 package ru.netology.web.test;
 
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
-import org.junit.jupiter.api.BeforeAll;
+import com.codeborne.selenide.ElementsCollection;
+import com.codeborne.selenide.SelenideElement;;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.netology.web.data.AuthElements;
 import ru.netology.web.data.AuthPath;
 import ru.netology.web.data.DataGenerator;
 
-import static io.restassured.RestAssured.given;
+import static com.codeborne.selenide.Condition.*;
+import static com.codeborne.selenide.Condition.text;
+import static com.codeborne.selenide.Selenide.*;
 
 public class AuthTest {
-    AuthElements auth = new AuthElements();
+    private SelenideElement loginField = $("[data-test-id=login] input");
+    private SelenideElement passwordField = $("[data-test-id=password] input");
+    private SelenideElement actionButton = $("[data-test-id=action-login]");
+    private SelenideElement errorNotification = $("[data-test-id=error-notification]");
+    private SelenideElement errorNotificationContent = $("[data-test-id=error-notification] .notification__content");
+    private ElementsCollection nextPage = $$(".heading");
 
-    private static RequestSpecification requestSpec = new RequestSpecBuilder()
-            .setBaseUri("http://localhost")
-            .setPort(9999)
-            .setAccept(ContentType.JSON)
-            .setContentType(ContentType.JSON)
-            .log(LogDetail.ALL)
-            .build();
-
-    @BeforeAll
-    static void setUpAll() {
-        given()
-                .spec(requestSpec) // указываем, какую спецификацию используем
-                .body(new AuthPath("vasya", "password", "active")) // передаём в теле объект, который будет преобразован в JSON
-                .when()
-                .post("/api/system/users")
-                .then()
-                .statusCode(200);
-    }
+    @BeforeEach
+    void openBrowser() { open("http://localhost:9999"); }
 
     @Test
     void shouldConfirmAuthRequest() {
-        auth.openBrowser();
-        auth.sendAllFieldsCorrectFilledRequest();
+        AuthPath userData = DataGenerator.generateNewAuth();
+        loginField.setValue(userData.getLogin());
+        passwordField.setValue(userData.getPassword());
+        actionButton.click();
+        nextPage.find(exactText("Личный кабинет")).shouldBe(exist);
     }
 
     @Test
-    void shouldNotConfirmWrongLoginAuthRequest() {
-        auth.openBrowser();
-        auth.sendWrongLoginRequest();
-        auth.findRejectMessage();
+    void shouldNotConfirmBlockedUserAuthRequest() {
+        AuthPath userData = DataGenerator.generateNewAuthReject();
+        loginField.setValue(userData.getLogin());
+        passwordField.setValue(userData.getPassword());
+        actionButton.click();
+        errorNotification.waitUntil(visible, 15000);
+        errorNotificationContent.shouldHave(text("Пользователь заблокирован"));
     }
 
     @Test
     void shouldNotConfirmWrongPasswordAuthRequest() {
-        auth.openBrowser();
-        auth.sendWrongPasswordRequest();
-        auth.findRejectMessage();
+        AuthPath userData = DataGenerator.generateNewAuthRejectWrongPassword();
+        loginField.setValue(userData.getLogin());
+        passwordField.setValue(userData.getPassword());
+        actionButton.click();
+        errorNotification.waitUntil(visible, 5000);
+        errorNotificationContent.shouldHave(text("Ошибка! " + "Неверно указан логин или пароль"));
     }
 
     @Test
-    void shouldNotConfirmEmptyLoginFieldAuthRequest() {
-        auth.openBrowser();
-        auth.sendEmptyLoginFieldRequest();
-        auth.findRejectEmptyLoginFieldMessage();
-    }
-
-    @Test
-    void shouldNotConfirmEmptyPasswordFieldAuthRequest() {
-        auth.openBrowser();
-        auth.sendEmptyPasswordFieldRequest();
-        auth.findRejectEmptyPasswordFieldMessage();
+    void shouldNotConfirmWrongLoginAuthRequest() {
+        AuthPath userData = DataGenerator.generateNewAuthRejectWrongLogin();
+        loginField.setValue(userData.getLogin());
+        passwordField.setValue(userData.getPassword());
+        actionButton.click();
+        errorNotification.waitUntil(visible, 5000);
+        errorNotificationContent.shouldHave(text("Ошибка! " + "Неверно указан логин или пароль"));
     }
 }
