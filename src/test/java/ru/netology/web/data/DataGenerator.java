@@ -13,6 +13,7 @@ import java.util.Locale;
 @AllArgsConstructor
 
 public class DataGenerator {
+
     private static RequestSpecification requestSpec = new RequestSpecBuilder()
             .setBaseUri("http://localhost")
             .setPort(9999)
@@ -33,8 +34,8 @@ public class DataGenerator {
 
     public static AuthPath generateNewAuth() {
         Faker faker = new Faker(new Locale("en"));
-        String login = faker.expression("vasya");
-        String password = faker.expression("password");
+        String login = faker.name().username();
+        String password = faker.internet().password();
         setUpAll(new AuthPath(login, password, "active"));
         return new AuthPath(login, password, "active");
     }
@@ -50,7 +51,7 @@ public class DataGenerator {
     public static AuthPath generateNewAuthRejectWrongLogin() {
         Faker faker = new Faker(new Locale("en"));
         String login = faker.name().username();
-        String password = faker.expression("password");
+        String password = faker.internet().password();
         String status = "active";
         setUpAll(new AuthPath(login, password, status));
         return new AuthPath("Иваныч", password, status);
@@ -58,7 +59,7 @@ public class DataGenerator {
 
     public static AuthPath generateNewAuthRejectWrongPassword() {
         Faker faker = new Faker(new Locale("en"));
-        String login = faker.expression("vasya");
+        String login = faker.name().username();
         String password = faker.internet().password();
         String status = "active";
         setUpAll(new AuthPath(login, password, status));

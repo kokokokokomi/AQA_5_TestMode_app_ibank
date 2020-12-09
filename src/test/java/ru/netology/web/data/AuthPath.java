@@ -1,7 +1,6 @@
 package ru.netology.web.data;
 
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Data
